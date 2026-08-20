@@ -5,7 +5,7 @@ https://www.db-fiddle.com/f/iEsFLGj659kxxchi7ZVhsH/0
 ![IMG-20250604-WA0032](https://github.com/user-attachments/assets/80a3c97a-627e-495f-ae37-cd642ea5244a)
 
 
-# A3_BancoDados_SQL_Lucas_Sara_Mikaely_Emilly
+# crypto-wallet-database-sql
 Este é um projeto de banco de dados para controle de carteiras de criptomoedas, desenvolvido para a UC *Programação de Soluções Computacionais*. A solução modela as entidades essenciais de uma carteira digital e foi implementada usando o ambiente [DB Fiddle](https://www.db-fiddle.com/) (MySQL 8.0).
 
 ---
