@@ -1,231 +1,120 @@
-# Link do Bd Fiddle
-https://www.db-fiddle.com/f/iEsFLGj659kxxchi7ZVhsH/0
+# 🪙 Crypto Wallet Relational Database
 
-# Diagrama ER
-![IMG-20250604-WA0032](https://github.com/user-attachments/assets/80a3c97a-627e-495f-ae37-cd642ea5244a)
-
-
-# crypto-wallet-database-sql
-Este é um projeto de banco de dados para controle de carteiras de criptomoedas, desenvolvido para a UC *Programação de Soluções Computacionais*. A solução modela as entidades essenciais de uma carteira digital e foi implementada usando o ambiente [DB Fiddle](https://www.db-fiddle.com/) (MySQL 8.0).
+Modelagem e implementação de um banco de dados relacional para gerenciamento de carteiras digitais, transações financeiras e custódia de criptoativos utilizando **MySQL 8.0**.
 
 ---
 
-## Funcionalidades
-- Cadastro de usuários  
-- Criação de carteiras vinculadas a usuários  
-- Registro de criptomoedas disponíveis  
-- Registro de transações de compra/venda  
-- Consultas SQL analíticas  
+## 📌 Visão Geral do Domínio
+
+O sistema gerencia o ciclo de transações de criptoativos entre usuários e suas respectivas carteiras digitais. A arquitetura de dados prioriza integridade referencial, normalização relacional (3FN) e alta precisão numérica para lidar com unidades fracionárias de moedas descentralizadas.
+
+### Destaques de Arquitetura:
+- **Precisão Financeira:** Utilização de `DECIMAL(18,8)` para suportar o fracionamento nativo de satoshis em criptomoedas como Bitcoin e Ethereum.
+- **Integridade Referencial:** Restrições de chave estrangeira (`FOREIGN KEY`) com validação estrita de integridade entre usuários, carteiras e ordens.
+- **Camada Analítica:** Consultas estruturadas com agregações (`SUM`, `GROUP BY`) e múltiplos `JOINs` para extração de métricas de portfólio.
 
 ---
 
-## Tecnologias Utilizadas
+## 🗺️ Diagrama Entidade-Relacionamento (ER)
 
-- MySQL 8.0 (via DB Fiddle)  
-- Modelagem relacional (ER)  
-- Consultas SQL (DDL, DML e SELECT)  
+\`\`\`mermaid
+erDiagram
+    USUARIO ||--o{ CARTEIRA : "possui"
+    CARTEIRA ||--o{ TRANSACAO : "executa"
+    CRIPTOMOEDA ||--o{ TRANSACAO : "referenciada em"
 
----
+    USUARIO {
+        int usuario_id PK
+        varchar nome
+        varchar email UK
+        datetime criado_em
+    }
 
-## Estrutura das Tabelas
+    CARTEIRA {
+        int carteira_id PK
+        int usuario_id FK
+        varchar nome
+        decimal saldo
+        datetime criado_em
+    }
 
-### 1. Usuario
-Armazena informações dos usuários da plataforma 
-- `usuario_id` (PK): Identificador do usuário  
-- `nome`: Nome do usuário  
-- `email`: E-mail (único)  
-- `criado_em`: Data de criação do registro  
+    CRIPTOMOEDA {
+        int cripto_id PK
+        varchar nome
+        varchar simbolo UK
+    }
 
-### 2. Carteira
-Representa as carteiras digitais de cada usuário, onde são armazenadas criptomoedas.
-- `carteira_id` (PK): Identificador da carteira  
-- `usuario_id` (FK): Chave estrangeira para Usuario  
-- `nome`: Nome da carteira  
-- `saldo`: Saldo em moeda local  
-- `criado_em`: Data de criação  
-
-### 3. Criptomoeda
-Contém o cadastro das criptomoedas disponíveis no sistema.
-- `cripto_id` (PK): Identificador da criptomoeda  
-- `nome`: Nome da cripto  
-- `simbolo`: Símbolo único (ex: BTC)  
-
-### 4. Transacao
-Registra todas as transações de compra de criptomoedas feitas nas carteiras.
-- `transacao_id` (PK): Identificador da transação  
-- `carteira_id` (FK): Referência à carteira  
-- `cripto_id` (FK): Referência à cripto usada  
-- `quantidade`: Quantidade da cripto  
-- `valor_total`: Valor total em moeda local  
-- `data_transacao`: Data da transação  
-
----
-
-## Como Executar no DB Fiddle
-
-1. Acesse: [https://www.db-fiddle.com](https://www.db-fiddle.com)  
-2. Escolha MySQL 8.0 como versão do banco  
-3. Copie e cole o código SQL contendo:
-   - Criação de tabelas (DDL)
-   - Inserção de dados (DML)
-   - Consultas SQL (SELECT)  
-4. Clique em **Run** para testar  
+    TRANSACAO {
+        int transacao_id PK
+        int carteira_id FK
+        int cripto_id FK
+        decimal quantidade
+        decimal valor_total
+        datetime data_transacao
+    }
+\`\`\`
 
 ---
 
-## 1. DDL – Criação das tabelas
+## 🗄️ Estrutura e Dicionário de Dados
 
-```sql
--- 1. Tabela Usuário
-CREATE TABLE Usuario (
-  usuario_id   INT AUTO_INCREMENT PRIMARY KEY,
-  nome         VARCHAR(100) NOT NULL,
-  email        VARCHAR(150) NOT NULL UNIQUE,
-  criado_em    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Tabela Carteira
-CREATE TABLE Carteira (
-  carteira_id  INT AUTO_INCREMENT PRIMARY KEY,
-  usuario_id   INT NOT NULL,
-  nome         VARCHAR(100) NOT NULL,
-  saldo        DECIMAL(18,8) NOT NULL DEFAULT 0.0,
-  criado_em    DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (usuario_id) REFERENCES Usuario(usuario_id)
-);
-
--- 3. Tabela Criptomoeda
-CREATE TABLE Criptomoeda (
-  cripto_id    INT AUTO_INCREMENT PRIMARY KEY,
-  nome         VARCHAR(50)  NOT NULL,
-  simbolo      VARCHAR(10)  NOT NULL UNIQUE
-);
-
--- 4. Tabela Transação
-CREATE TABLE Transacao (
-  transacao_id    INT AUTO_INCREMENT PRIMARY KEY,
-  carteira_id     INT NOT NULL,
-  cripto_id       INT NOT NULL,
-  quantidade      DECIMAL(18,8) NOT NULL,
-  valor_total     DECIMAL(18,2) NOT NULL,  -- em moeda local
-  data_transacao DATETIME      NOT NULL,
-  FOREIGN KEY (carteira_id) REFERENCES Carteira(carteira_id),
-  FOREIGN KEY (cripto_id)   REFERENCES Criptomoeda(cripto_id)
-);
-```
+| Tabela | Responsabilidade | Chaves / Restrições |
+| :--- | :--- | :--- |
+| **`Usuario`** | Cadastro dos titulares das contas | `usuario_id` (PK), `email` (Unique) |
+| **`Carteira`** | Contas/carteiras vinculadas ao usuário | `carteira_id` (PK), `usuario_id` (FK) |
+| **`Criptomoeda`** | Ativos suportados pela plataforma | `cripto_id` (PK), `simbolo` (Unique) |
+| **`Transacao`** | Histórico de ordens de compra/venda | `transacao_id` (PK), `carteira_id` (FK), `cripto_id` (FK) |
 
 ---
 
-## 2. DML – Inserção de dados de exemplo
+## 🚀 Como Executar
 
-```sql
--- 1. Usuários
-INSERT INTO Usuario (nome, email) VALUES
-  ('Ana Silva',    'ana.silva@example.com'),
-  ('Bruno Costa',  'bruno.costa@example.com'),
-  ('Carla Pereira','carla.pereira@example.com');
+### Opção 1: Ambiente Local (MySQL CLI / Workbench)
+\`\`\`bash
+# 1. Clone o repositório
+git clone https://github.com/Lucas-san7os/crypto-wallet-database-sql.git
+cd crypto-wallet-database-sql
 
--- 2. Carteiras
-INSERT INTO Carteira (usuario_id, nome, saldo) VALUES
-  (1, 'Carteira Pessoal',  0.0),
-  (1, 'Carteira de Trading', 0.0),
-  (2, 'Carteira Principal', 0.0),
-  (3, 'Carteira Reserva',   0.0);
+# 2. Execute os scripts em ordem
+mysql -u root -p < sql/01_schema.sql
+mysql -u root -p < sql/02_seed.sql
+mysql -u root -p < sql/03_queries.sql
+\`\`\`
 
--- 3. Criptomoedas
-INSERT INTO Criptomoeda (nome, simbolo) VALUES
-  ('Bitcoin',  'BTC'),
-  ('Ethereum', 'ETH'),
-  ('Ripple',   'XRP');
-
--- 4. Transações
-INSERT INTO Transacao (carteira_id, cripto_id, quantidade, valor_total, data_transacao) VALUES
-  (1, 1, 0.02500000,  1250.00, '2025-05-20 09:15:00'),
-  (1, 2, 0.10000000,   300.00, '2025-05-21 14:30:00'),
-  (2, 1, 0.01000000,   500.00, '2025-05-22 11:45:00'),
-  (3, 3, 50.00000000,  750.00, '2025-05-23 16:00:00'),
-  (4, 2, 0.05000000,   150.00, '2025-05-24 10:20:00');
-```
+### Opção 2: Teste Online (DB Fiddle)
+1. Acesse o ambiente online: [DB Fiddle - Crypto Wallet SQL](https://www.db-fiddle.com/f/iEsFLGj659kxxchi7ZVhsH/0)
+2. Selecione a versão **MySQL 8.0**.
+3. Clique em **Run** para executar o schema e visualizar o resultado das queries analíticas.
 
 ---
 
-## 3. Consultas de Verificação (exemplos)
+## 📊 Exemplos de Consultas Analíticas
 
-```sql
--- a) Listar todas as transações de Ana Silva (usuário_id = 1), mostrando data e valor:
-SELECT t.data_transacao, c.simbolo, t.quantidade, t.valor_total
-FROM Transacao AS t
-JOIN Carteira   AS w ON t.carteira_id = w.carteira_id
-JOIN Usuario    AS u ON w.usuario_id    = u.usuario_id
-JOIN Criptomoeda AS c ON t.cripto_id     = c.cripto_id
-WHERE u.usuario_id = 1
-ORDER BY t.data_transacao;
-
-Exemplo de resultado:
-
-20/05/2025 às 09:15 — 0.025 BTC por R$ 1.250,00
-
-21/05/2025 às 14:30 — 0.100 ETH por R$ 300,00
-
-22/05/2025 às 11:45 — 0.010 BTC por R$ 500,00
-
--- b) Total investido por carteira:
-SELECT w.nome AS carteira, SUM(t.valor_total) AS total_investido
-FROM Transacao AS t
-JOIN Carteira   AS w ON t.carteira_id = w.carteira_id
-GROUP BY w.carteira_id;
-
-Exemplo de resultado:
-
-Carteira Pessoal: R$ 1.550,00
-
-Carteira de Trading: R$ 500,00
-
-Carteira Principal: R$ 750,00
-
-Carteira Reserva: R$ 150,00
-
--- c) Quantidade total de cada criptomoeda em todas as carteiras:
-SELECT c.simbolo, SUM(t.quantidade) AS total_quantidade
-FROM Transacao   AS t
-JOIN Criptomoeda AS c ON t.cripto_id = c.cripto_id
-GROUP BY c.cripto_id;
-
-Exemplo de resultado:
-
-Bitcoin (BTC): 0.035 unidades
-
-Ethereum (ETH): 0.150 unidades
-
-Ripple (XRP): 50.000 unidades
-
-## Consultas SQL de Exemplo
-
-### a) Transações de Ana Silva
-```sql
-SELECT t.data_transacao, c.simbolo, t.quantidade, t.valor_total
+### 1. Volume Total Investido por Carteira
+\`\`\`sql
+SELECT 
+    w.nome AS carteira, 
+    SUM(t.valor_total) AS total_investido
 FROM Transacao AS t
 JOIN Carteira AS w ON t.carteira_id = w.carteira_id
-JOIN Usuario AS u ON w.usuario_id = u.usuario_id
+GROUP BY w.carteira_id, w.nome;
+\`\`\`
+
+### 2. Saldo Total Custodiado por Criptoativo
+\`\`\`sql
+SELECT 
+    c.simbolo, 
+    c.nome,
+    SUM(t.quantidade) AS saldo_total_custodiado
+FROM Transacao AS t
 JOIN Criptomoeda AS c ON t.cripto_id = c.cripto_id
-WHERE u.usuario_id = 1
-ORDER BY t.data_transacao;
+GROUP BY c.cripto_id, c.simbolo, c.nome;
+\`\`\`
 
-Essa consulta retorna as transações realizadas pelo usuário com ID 1, listando a data da transação, o símbolo da criptomoeda, a quantidade negociada e o valor total da operação.
+---
 
-Exemplo de resultado:
-
-Data da Transação	Criptomoeda	Quantidade	Valor Total (R$)
-20/05/2025 09:15	BTC	0.02500000	1.250,00
-21/05/2025 14:30	ETH	0.10000000	300,00
-22/05/2025 11:45	BTC	0.01000000	500,00
-
-```
-
-## Contribuição
-
-Este projeto foi desenvolvido por:
-- Lucas Santos
-- Mikaely Esthefany
-- Sara Medeiros
-- Emilly Mendonça
+## 👥 Autores & Colaboradores
+- **Lucas Santos**
+- **Mikaely Esthefany**
+- **Sara Medeiros**
+- **Emilly Mendonça**
